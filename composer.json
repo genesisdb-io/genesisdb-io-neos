@@ -1,0 +1,19 @@
+{
+    "description": "A Neos Flow wrapper for the Genesis DB PHP SDK",
+    "type": "neos-package",
+    "name": "genesisdb/neos-genesisdb",
+    "require": {
+        "neos/flow": "*",
+        "genesisdb/client-sdk": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "GenesisDB\\Neos\\GenesisDB\\": "Classes/"
+        }
+    },
+    "extra": {
+        "neos": {
+            "package-key": "GenesisDB.Neos.GenesisDB"
+        }
+    }
+}
