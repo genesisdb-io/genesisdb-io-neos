@@ -39,6 +39,15 @@ final class EventStoreService
     }
 
     /**
+     * @param string $subject
+     * @return \Generator
+     */
+    public function observeEvents(string $subject): \Generator
+    {
+        return $this->eventStore()->observeEvents($subject);
+    }
+
+    /**
      * @param array $events
      * @return void
      */
