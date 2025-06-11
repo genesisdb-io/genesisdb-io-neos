@@ -3,8 +3,8 @@
     "type": "neos-package",
     "name": "genesisdb/neos-genesisdb",
     "require": {
-        "neos/flow": "*",
-        "genesisdb/client-sdk": "*"
+        "neos/flow": "^8.0 || ^8.1 || ^8.2 || ^8.3",
+        "genesisdb/client-sdk": "^0.0"
     },
     "autoload": {
         "psr-4": {
