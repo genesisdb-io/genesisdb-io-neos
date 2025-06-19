@@ -28,17 +28,16 @@ use GenesisDB\Neos\GenesisDB\Service\EventStoreService;
 #[Flow\Inject]
 protected EventStoreService $eventStoreService;
 
-
 // Use the EventStore methods
 
 // Stream events (array of CloudEvents)
 $events = $this->eventStoreService->streamEvents('/customer');
-
+        
 // Commit events
 $events = [
     [
         'subject' => '/customer',
-        'type' => 'added',
+        'type' => 'io.genesisdb.app.customer-added',
         'data' => [
             'firstName' => 'Bruce',
             'lastName' => 'Wayne',
@@ -47,7 +46,7 @@ $events = [
     ],
     [
         'subject' => '/customer',
-        'type' => 'added',
+        'type' => 'io.genesisdb.app.customer-added',
         'data' => [
             'firstName' => 'Alfred',
             'lastName' => 'Pennyworth',
@@ -55,8 +54,18 @@ $events = [
         ]
     ],
     [
+        'source' => 'io.genesisdb.store'
+        'subject' => '/article',
+        'type' => 'io.genesisdb.store.article-added',
+        'data' => [
+            'name' => 'Tumbler',
+            'color' => 'black',
+            'price' => 2990000.00
+        ]
+    ],
+    [
         'subject' => '/customer/fed2902d-0135-460d-8605-263a06308448',
-        'type' => 'personalDataChanged',
+        'type' => 'io.genesisdb.app.customer-personaldata-changed',
         'data' => [
             'firstName' => 'Angus',
             'lastName' => 'MacGyer',
@@ -65,6 +74,8 @@ $events = [
     ]
 ];
 $this->eventStoreService->commitEvents($events);
+
+$observed = $this->eventStoreService->observeEvents('/customer');
 
 // Use the EventStore status methods
 $this->eventStoreService->audit();
