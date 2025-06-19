@@ -5,7 +5,7 @@ namespace GenesisDB\Neos\GenesisDB\Service;
  * This file is part of the GenesisDB.Neos.GenesisDB package.
  */
 
-use GenesisDB\GenesisDB\Client ;
+use GenesisDB\GenesisDB\Client;
 use Neos\Flow\Annotations as Flow;
 
 #[Flow\Scope("singleton")]
