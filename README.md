@@ -36,6 +36,7 @@ $events = $this->eventStoreService->streamEvents('/customer');
 // Commit events
 $events = [
     [
+        'source' => 'io.genesisdb.app',
         'subject' => '/customer',
         'type' => 'io.genesisdb.app.customer-added',
         'data' => [
@@ -45,6 +46,7 @@ $events = [
         ]
     ],
     [
+        'source' => 'io.genesisdb.app',
         'subject' => '/customer',
         'type' => 'io.genesisdb.app.customer-added',
         'data' => [
@@ -64,6 +66,7 @@ $events = [
         ]
     ],
     [
+        'source' => 'io.genesisdb.app',
         'subject' => '/customer/fed2902d-0135-460d-8605-263a06308448',
         'type' => 'io.genesisdb.app.customer-personaldata-changed',
         'data' => [
