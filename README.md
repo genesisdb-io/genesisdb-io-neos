@@ -56,7 +56,7 @@ $events = [
         ]
     ],
     [
-        'source' => 'io.genesisdb.store'
+        'source' => 'io.genesisdb.store',
         'subject' => '/article',
         'type' => 'io.genesisdb.store.article-added',
         'data' => [
