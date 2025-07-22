@@ -31,29 +31,46 @@ final class EventStoreService
 
     /**
      * @param string $subject
+     * @param string|null $lowerBound
+     * @param bool|null $includeLowerBoundEvent
+     * @param string|null $latestByEventType
      * @return array
      */
-    public function streamEvents(string $subject): array
+    public function streamEvents(string $subject, ?string $lowerBound = null, ?bool $includeLowerBoundEvent = null, ?string $latestByEventType = null): array
     {
-        return $this->eventStore()->streamEvents($subject);
+        return $this->eventStore()->streamEvents($subject, $lowerBound, $includeLowerBoundEvent, $latestByEventType);
     }
 
     /**
      * @param string $subject
+     * @param string|null $lowerBound
+     * @param bool|null $includeLowerBoundEvent
+     * @param string|null $latestByEventType
      * @return \Generator
      */
-    public function observeEvents(string $subject): \Generator
+    public function observeEvents(string $subject, ?string $lowerBound = null, ?bool $includeLowerBoundEvent = null, ?string $latestByEventType = null): \Generator
     {
-        return $this->eventStore()->observeEvents($subject);
+        return $this->eventStore()->observeEvents($subject, $lowerBound, $includeLowerBoundEvent, $latestByEventType);
     }
 
     /**
      * @param array $events
+     * @param array|null $preconditions
      * @return void
      */
-    public function commitEvents(array $events): void
+    public function commitEvents(array $events, ?array $preconditions = null): void
     {
-        $this->eventStore()->commitEvents($events);
+        $this->eventStore()->commitEvents($events, $preconditions);
+    }
+
+    /**
+     * Erase data for GDPR compliance
+     * @param string $subject
+     * @return void
+     */
+    public function eraseData(string $subject): void
+    {
+        $this->eventStore()->eraseData($subject);
     }
 
     /**

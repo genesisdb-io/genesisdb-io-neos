@@ -32,8 +32,14 @@ protected EventStoreService $eventStoreService;
 
 // Stream events (array of CloudEvents)
 $events = $this->eventStoreService->streamEvents('/customer');
-        
-// Commit events
+
+// Stream events with lower bound
+$events = $this->eventStoreService->streamEvents('/customer', 'event-id-123', true);
+
+// Stream latest events by event type
+$latestEvents = $this->eventStoreService->streamEvents('/customer', null, null, 'io.genesisdb.app.customer-updated');
+
+// Commit events (options are optional per event)
 $events = [
     [
         'source' => 'io.genesisdb.app',
@@ -44,6 +50,7 @@ $events = [
             'lastName' => 'Wayne',
             'emailAddress' => 'bruce.wayne@enterprise.wayne'
         ]
+        // No options - data stored normally
     ],
     [
         'source' => 'io.genesisdb.app',
@@ -78,13 +85,79 @@ $events = [
 ];
 $this->eventStoreService->commitEvents($events);
 
+// Commit events with GDPR compliance (store data as reference)
+$eventsWithGDPR = [
+    [
+        'source' => 'io.genesisdb.app',
+        'subject' => '/customer/sensitive',
+        'type' => 'io.genesisdb.app.customer-sensitive-data',
+        'data' => [
+            'ssn' => '123-45-6789',
+            'creditCard' => '4111-1111-1111-1111'
+        ],
+        'options' => ['storeDataAsReference' => true]
+    ]
+];
+$this->eventStoreService->commitEvents($eventsWithGDPR);
+
+// Erase data for GDPR compliance
+$this->eventStoreService->eraseData('/customer/sensitive');
+
 $observed = $this->eventStoreService->observeEvents('/customer');
+
+// Observe events with lower bound
+foreach ($this->eventStoreService->observeEvents('/customer', 'event-id-123', true) as $event) {
+    echo "Received event: " . $event->getType() . "\n";
+}
 
 // Use the EventStore status methods
 $this->eventStoreService->audit();
 $this->eventStoreService->ping();
 ```
 
+## Examples
+
+### GDPR Compliance
+
+```php
+// Store sensitive data as reference (options are optional per event)
+$events = [
+    [
+        'source' => 'io.genesisdb.app',
+        'subject' => '/user/123',
+        'type' => 'io.genesisdb.app.user-created',
+        'data' => ['email' => 'user@example.com', 'name' => 'John Doe'],
+        'options' => ['storeDataAsReference' => true]  // ✅ Optional per event
+    ],
+    [
+        'source' => 'io.genesisdb.app',
+        'subject' => '/user/124',
+        'type' => 'io.genesisdb.app.user-created',
+        'data' => ['email' => 'user2@example.com', 'name' => 'Jane Doe']
+        // ✅ No options - data stored normally
+    ]
+];
+
+$this->eventStoreService->commitEvents($events);
+
+// Erase user data for GDPR compliance
+$this->eventStoreService->eraseData('/user/123');
+```
+
+### Enhanced Streaming
+
+```php
+// Stream events from a specific lower bound
+$events = $this->eventStoreService->streamEvents('/user/123', 'event-id-123', true);
+
+// Get latest events by event type
+$latestEvents = $this->eventStoreService->streamEvents('/user/123', null, null, 'io.genesisdb.app.user-updated');
+
+// Observe events with lower bound
+foreach ($this->eventStoreService->observeEvents('/user/123', 'event-id-123', true) as $event) {
+    echo "Received event: " . $event->getType() . "\n";
+}
+```
 
 ## Author
 

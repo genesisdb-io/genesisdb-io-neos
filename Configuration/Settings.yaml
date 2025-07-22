@@ -1,3 +1,6 @@
 GenesisDB:
   Neos:
-    GenesisDB: []
+    GenesisDB:
+      apiUrl: 'http://172.17.0.1:8080'
+      apiVersion: 'v1'
+      authToken: 'secret'
