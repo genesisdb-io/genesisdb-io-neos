@@ -83,6 +83,15 @@ final class EventStoreService
     }
 
     /**
+     * @param string $query
+     * @return array
+     */
+    public function queryEvents(string $query): array
+    {
+        return $this->eventStore()->q($query);
+    }
+
+    /**
      * @return string
      */
     public function audit(): string
