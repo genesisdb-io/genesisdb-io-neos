@@ -1,6 +1,6 @@
-# Genesis DB Neos Flow package
+# GenesisDB Neos Flow package
 
-A package to enable the use of Genesis DB with Flow and Neos.
+A package to enable the use of GenesisDB with Flow and Neos.
 
 ## Installation
 
