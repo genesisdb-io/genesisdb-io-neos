@@ -6,6 +6,9 @@ namespace GenesisDB\Neos\GenesisDB\Service;
  */
 
 use GenesisDB\GenesisDB\Client;
+use GenesisDB\GenesisDB\CommitEvent;
+use GenesisDB\GenesisDB\Precondition;
+use GenesisDB\GenesisDB\StreamOptions;
 use Neos\Flow\Annotations as Flow;
 
 #[Flow\Scope("singleton")]
@@ -30,32 +33,34 @@ final class EventStoreService
     }
 
     /**
+     * Stream events for a given subject
+     *
      * @param string $subject
-     * @param string|null $lowerBound
-     * @param bool|null $includeLowerBoundEvent
-     * @param string|null $latestByEventType
+     * @param StreamOptions|null $options
      * @return array
      */
-    public function streamEvents(string $subject, ?string $lowerBound = null, ?bool $includeLowerBoundEvent = null, ?string $latestByEventType = null): array
+    public function streamEvents(string $subject, ?StreamOptions $options = null): array
     {
-        return $this->eventStore()->streamEvents($subject, $lowerBound, $includeLowerBoundEvent, $latestByEventType);
+        return $this->eventStore()->streamEvents($subject, $options);
     }
 
     /**
+     * Observe events for a given subject in real-time
+     *
      * @param string $subject
-     * @param string|null $lowerBound
-     * @param bool|null $includeLowerBoundEvent
-     * @param string|null $latestByEventType
+     * @param StreamOptions|null $options
      * @return \Generator
      */
-    public function observeEvents(string $subject, ?string $lowerBound = null, ?bool $includeLowerBoundEvent = null, ?string $latestByEventType = null): \Generator
+    public function observeEvents(string $subject, ?StreamOptions $options = null): \Generator
     {
-        return $this->eventStore()->observeEvents($subject, $lowerBound, $includeLowerBoundEvent, $latestByEventType);
+        return $this->eventStore()->observeEvents($subject, $options);
     }
 
     /**
-     * @param array $events
-     * @param array|null $preconditions
+     * Commit events to GenesisDB
+     *
+     * @param CommitEvent[] $events
+     * @param Precondition[]|null $preconditions
      * @return void
      */
     public function commitEvents(array $events, ?array $preconditions = null): void
@@ -65,6 +70,7 @@ final class EventStoreService
 
     /**
      * Erase data for GDPR compliance
+     *
      * @param string $subject
      * @return void
      */
@@ -74,6 +80,8 @@ final class EventStoreService
     }
 
     /**
+     * Execute a GDBQL query
+     *
      * @param string $query
      * @return array
      */
@@ -83,15 +91,19 @@ final class EventStoreService
     }
 
     /**
+     * Query events using the same functionality as the q method
+     *
      * @param string $query
      * @return array
      */
     public function queryEvents(string $query): array
     {
-        return $this->eventStore()->q($query);
+        return $this->eventStore()->queryEvents($query);
     }
 
     /**
+     * Run audit to check event consistency
+     *
      * @return string
      */
     public function audit(): string
@@ -100,6 +112,8 @@ final class EventStoreService
     }
 
     /**
+     * Health check
+     *
      * @return bool
      */
     public function ping(): bool
