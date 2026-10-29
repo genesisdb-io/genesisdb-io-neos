@@ -1,0 +1,38 @@
+name: Release
+
+# Triggered by hand. Tags the given version, Packagist picks the tag up.
+# Earlier releases use plain tags (1.0.3), so the tag carries no v prefix.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to tag, for example 2.0.0
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          coverage: none
+      - name: Validate
+        run: |
+          composer validate --strict --no-check-lock
+          find Classes -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Tag
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "version must look like 2.0.0" >&2
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$VERSION" -m "$VERSION"
+          git push origin "$VERSION"

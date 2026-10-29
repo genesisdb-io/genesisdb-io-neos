@@ -1,124 +1,166 @@
 <?php
+
+declare(strict_types=1);
+
 namespace GenesisDB\Neos\GenesisDB\Service;
 
 /*
  * This file is part of the GenesisDB.Neos.GenesisDB package.
  */
 
-use GenesisDB\GenesisDB\Client;
-use GenesisDB\GenesisDB\CommitEvent;
-use GenesisDB\GenesisDB\Precondition;
-use GenesisDB\GenesisDB\StreamOptions;
+use GenesisDB\Client;
+use GenesisDB\Event;
+use GenesisDB\FetchOptions;
+use GenesisDB\NewEvent;
+use GenesisDB\Precondition;
+use GenesisDB\RegisteredSchema;
+use GenesisDB\Status;
 use Neos\Flow\Annotations as Flow;
 
+/**
+ * Flow access to GenesisDB 2.0 through the official PHP client.
+ *
+ * Configure GenesisDB.Neos.GenesisDB.url and .authToken. Empty values fall back to the
+ * GENESISDB_URL and GENESISDB_AUTH_TOKEN environment variables.
+ */
 #[Flow\Scope("singleton")]
 final class EventStoreService
 {
-
-    #[Flow\InjectConfiguration(path: 'apiUrl', package: 'GenesisDB.Neos.GenesisDB')]
-    protected string $apiUrl;
-
-    #[Flow\InjectConfiguration(path: 'apiVersion', package: 'GenesisDB.Neos.GenesisDB')]
-    protected string $apiVersion;
+    #[Flow\InjectConfiguration(path: 'url', package: 'GenesisDB.Neos.GenesisDB')]
+    protected ?string $url = null;
 
     #[Flow\InjectConfiguration(path: 'authToken', package: 'GenesisDB.Neos.GenesisDB')]
-    protected string $authToken;
+    protected ?string $authToken = null;
+
+    #[Flow\InjectConfiguration(path: 'timeout', package: 'GenesisDB.Neos.GenesisDB')]
+    protected float|int|null $timeout = null;
+
+    private ?Client $client = null;
 
     /**
-     * @return Client
+     * The underlying client, created on first use, for calls this service does not wrap.
      */
-    private function eventStore(): Client
+    public function client(): Client
     {
-        return new Client($this->apiUrl, $this->apiVersion, $this->authToken);
+        return $this->client ??= new Client(
+            url: $this->url ?: null,
+            token: $this->authToken ?: null,
+            timeout: (float) ($this->timeout ?? 30.0),
+        );
     }
 
     /**
-     * Stream events for a given subject
+     * Commit events atomically after checking the preconditions. Returns the stored events.
      *
-     * @param string $subject
-     * @param StreamOptions|null $options
-     * @return array
+     * @param list<NewEvent> $events
+     * @param list<Precondition> $preconditions
+     * @return list<Event>
      */
-    public function streamEvents(string $subject, ?StreamOptions $options = null): array
+    public function commit(array $events, array $preconditions = []): array
     {
-        return $this->eventStore()->streamEvents($subject, $options);
+        return $this->client()->commit($events, $preconditions);
     }
 
     /**
-     * Observe events for a given subject in real-time
+     * Fetch the events of a subject and all of its descendants, in commit order.
      *
-     * @param string $subject
-     * @param StreamOptions|null $options
-     * @return \Generator
+     * @return list<Event>
      */
-    public function observeEvents(string $subject, ?StreamOptions $options = null): \Generator
+    public function fetch(string $subject, ?FetchOptions $options = null): array
     {
-        return $this->eventStore()->observeEvents($subject, $options);
+        return $this->client()->fetch($subject, $options);
     }
 
     /**
-     * Commit events to GenesisDB
+     * Subscribe to a subject and its descendants. Yields the history first, then new events.
      *
-     * @param CommitEvent[] $events
-     * @param Precondition[]|null $preconditions
-     * @return void
+     * @param float|null $interval poll interval in seconds, null uses the server default of one second
+     * @return \Generator<int, Event>
      */
-    public function commitEvents(array $events, ?array $preconditions = null): void
+    public function subscribe(string $subject, ?float $interval = null, ?FetchOptions $options = null): \Generator
     {
-        $this->eventStore()->commitEvents($events, $preconditions);
+        return $this->client()->subscribe($subject, $interval, $options);
     }
 
     /**
-     * Erase data for GDPR compliance
+     * Run a GDBQL query. Returns the result rows, or a single-element list for a bare aggregate.
      *
-     * @param string $subject
-     * @return void
+     * @return list<mixed>
      */
-    public function eraseData(string $subject): void
+    public function query(string $query): array
     {
-        $this->eventStore()->eraseData($subject);
+        return $this->client()->query($query);
     }
 
     /**
-     * Execute a GDBQL query
+     * Distinct top level subjects.
      *
-     * @param string $query
-     * @return array
+     * @return list<string>
      */
-    public function q(string $query): array
+    public function subjects(): array
     {
-        return $this->eventStore()->q($query);
+        return $this->client()->subjects();
     }
 
     /**
-     * Query events using the same functionality as the q method
+     * Distinct event types.
      *
-     * @param string $query
-     * @return array
+     * @return list<string>
      */
-    public function queryEvents(string $query): array
+    public function types(): array
     {
-        return $this->eventStore()->queryEvents($query);
+        return $this->client()->types();
     }
 
     /**
-     * Run audit to check event consistency
+     * Register a JSON schema for an event type. Administrator token.
      *
-     * @return string
+     * @param array<string, mixed> $schema
+     */
+    public function registerSchema(string $eventType, array $schema): void
+    {
+        $this->client()->registerSchema($eventType, $schema);
+    }
+
+    /**
+     * Every registered schema.
+     *
+     * @return list<RegisteredSchema>
+     */
+    public function schemas(): array
+    {
+        return $this->client()->schemas();
+    }
+
+    /**
+     * Erase every reference payload below a subject. Administrator token.
+     */
+    public function erase(string $subject): string
+    {
+        return $this->client()->erase($subject);
+    }
+
+    /**
+     * Verify the hash chain of the whole store. Administrator token.
      */
     public function audit(): string
     {
-        return $this->eventStore()->audit();
+        return $this->client()->audit();
     }
 
     /**
-     * Health check
-     *
-     * @return bool
+     * Engine version, event counts, storage format and readiness.
+     */
+    public function status(): Status
+    {
+        return $this->client()->status();
+    }
+
+    /**
+     * Liveness check. True when the server answers "Pong".
      */
     public function ping(): bool
     {
-        return $this->eventStore()->ping() === 'pong';
+        return strcasecmp(trim($this->client()->ping()), 'pong') === 0;
     }
-
 }

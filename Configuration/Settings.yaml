@@ -1,3 +1,10 @@
 GenesisDB:
   Neos:
-    GenesisDB: []
+    GenesisDB:
+      # Base URL of the GenesisDB server, for example 'http://localhost:8080'.
+      # Empty falls back to the GENESISDB_URL environment variable.
+      url: ''
+      # Bearer token, at least 32 bytes. Empty falls back to GENESISDB_AUTH_TOKEN.
+      authToken: ''
+      # Timeout in seconds for non-streaming calls. Subscriptions never time out.
+      timeout: 30

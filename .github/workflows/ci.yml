@@ -1,0 +1,47 @@
+name: CI
+
+# Installs the package into a fresh Flow distribution and checks that it boots
+# and resolves the GenesisDB 2.0 PHP client.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        include:
+          - php: "8.2"
+            flow: "^8.3"
+          - php: "8.4"
+            flow: "^9.0"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: package
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: pdo_sqlite
+          coverage: none
+      - name: Lint
+        run: find package/Classes -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Install into Flow ${{ matrix.flow }}
+        env:
+          COMPOSER_NO_INTERACTION: 1
+        run: |
+          composer create-project --no-progress --prefer-dist neos/flow-base-distribution app "${{ matrix.flow }}"
+          cd app
+          composer config repositories.neos-genesisdb path ../package
+          composer require --no-progress "genesisdb/neos-genesisdb:@dev"
+          composer show genesisdb/client-sdk | grep -E '^versions.*v?2\.'
+      - name: Boot Flow with the package
+        working-directory: app
+        run: |
+          mkdir -p Configuration/Development
+          printf 'Neos:\n  Flow:\n    persistence:\n      backendOptions:\n        driver: pdo_sqlite\n        path: "%%FLOW_PATH_DATA%%Persistent/ci.sqlite"\n' > Configuration/Development/Settings.yaml
+          ./flow flow:package:list | grep -F 'GenesisDB.Neos.GenesisDB'
+          ./flow configuration:show --path GenesisDB.Neos.GenesisDB
